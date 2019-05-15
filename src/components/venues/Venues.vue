@@ -6,7 +6,7 @@
                 id="queryCityField"
                 label="City:"
                 label-for="queryCity">
-                <b-select id="queryCity" @mouseleave="disableSwitch = true" v-model="queryValues.city" :options="cities">
+                <b-select id="queryCity" @keyup="disableSwitch = true" v-model="queryValues.city" :options="cities">
                 </b-select>
             </b-form-group>
             <b-form-group
@@ -82,9 +82,11 @@
             </b-form-group>
 
 
-            <b-button @click="populateQuery" variant="success">Search</b-button>
+            <b-button @click="populateQuery" :disabled="disableSearch" variant="success">Search</b-button>
             <b-button @click="resetSearch" variant="warning">Clear Filter</b-button>
-            <b-form-checkbox style="margin-top: 15px;" :disabled="disableSwitch || !authToken" @change="getAllVenuesAdmin" switch>Get all my administered venues</b-form-checkbox>
+            <b-form-checkbox style="margin-top: 15px;" :disabled="disableSwitch || !authToken" @change="getAllVenuesAdmin" v-model="switchAdmin" switch>Get all my administered venues</b-form-checkbox>
+            <p style="font-size: 12px;">Note: Filtering venues is disabled when looking at admin venues.</p>
+
             <div style="margin-top: 50px;">
                 <b-alert v-model="showSuccess" variant="success" dismissible>{{alertMessage}}</b-alert>
                 <label>Per Page</label>
@@ -250,7 +252,9 @@
                 currentPage: 1,
                 retrievingVenues: false,
                 showAdminVenues: false,
-                disableSwitch: false
+                disableSwitch: false,
+                disableSearch: false,
+                switchAdmin: false
             }
         },
         mounted() {
@@ -290,6 +294,7 @@
             },
             getAllVenuesAdmin() {
                 this.showAdminVenues = !this.showAdminVenues;
+                this.disableSearch = !this.disableSearch;
 
                 if (!this.showAdminVenues) {
                     this.detailedVenues.length = 0;
@@ -354,6 +359,8 @@
             getAllVenuesQuery(query) {
                 this.venues=[];
                 let self = this;
+                this.disableSwitch = !this.disableSwitch;
+
                 this.$http.get('http://localhost:4941/api/v1/venues' + query)
                     .then(function(response) {
                         this.venues = response.data;
@@ -461,6 +468,17 @@
                     }
                 }
                 this.detailedVenues = [];
+                if (this.switchAdmin) {
+                    this.switchAdmin = !this.switchAdmin;
+                    this.showAdminVenues = !this.showAdminVenues;
+                    this.disableSearch = !this.disableSearch;
+
+                }
+                if (this.disableSwitch) {
+                    this.disableSwitch = !this.disableSwitch;
+                }
+
+
                 this.getAllVenues();
             },
             reverseValues() {
