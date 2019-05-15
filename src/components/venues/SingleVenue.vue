@@ -214,10 +214,12 @@
             uploadVenuePhoto() {
                 if (this.fileValidation) {
                     let formData = new FormData();
+                    console.log(this.venuePhoto);
+
                     formData.append('photo', this.venuePhoto);
+                    formData.append('type', "file");
                     formData.append('description', "New Photo");
                     formData.append('makePrimary', 'false');
-                    console.log(formData);
                     this.showError = false;
                     fetch('http://localhost:4941/api/v1/venues/'+this.singleVenue.venueId+"/photos", {
                         method: "POST",

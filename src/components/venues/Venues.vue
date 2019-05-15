@@ -6,7 +6,7 @@
                 id="queryCityField"
                 label="City:"
                 label-for="queryCity">
-                <b-select id="queryCity" v-model="queryValues.city" :options="cities">
+                <b-select id="queryCity" @mouseleave="disableSwitch = true" v-model="queryValues.city" :options="cities">
                 </b-select>
             </b-form-group>
             <b-form-group
@@ -84,7 +84,7 @@
 
             <b-button @click="populateQuery" variant="success">Search</b-button>
             <b-button @click="resetSearch" variant="warning">Clear Filter</b-button>
-            <b-form-checkbox style="margin-top: 15px;" @change="getAllVenuesAdmin" switch>Get all my administered venues</b-form-checkbox>
+            <b-form-checkbox style="margin-top: 15px;" :disabled="disableSwitch || !authToken" @change="getAllVenuesAdmin" switch>Get all my administered venues</b-form-checkbox>
             <div style="margin-top: 50px;">
                 <b-alert v-model="showSuccess" variant="success" dismissible>{{alertMessage}}</b-alert>
                 <label>Per Page</label>
@@ -209,7 +209,8 @@
                     myLongitude: "",
                     reverseSort: false,
                     minStarRating: "",
-                    maxCostRating: ""
+                    maxCostRating: "",
+                    disableSwitch: false
                 },
                 selectedVenue: "",
                 detailedVenue: "",
@@ -248,7 +249,8 @@
                 perPage: 10,
                 currentPage: 1,
                 retrievingVenues: false,
-                showAdminVenues: false
+                showAdminVenues: false,
+                disableSwitch: false
             }
         },
         mounted() {
@@ -351,9 +353,13 @@
 
             getAllVenuesQuery(query) {
                 this.venues=[];
+                let self = this;
                 this.$http.get('http://localhost:4941/api/v1/venues' + query)
                     .then(function(response) {
                         this.venues = response.data;
+                        if (self.showAdminVenues) {
+                            self.detailedVenues();
+                        }
                     }, function(error) {
                         this.error = error;
                         this.errorFlag = true;
