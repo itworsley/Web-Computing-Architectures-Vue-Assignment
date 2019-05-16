@@ -62,8 +62,11 @@
                            alt="Venue Image"
                            width="300px">
                     </b-img>
-                    <b-button :disabled="photo.isPrimary" variant="primary" @click="makePhotoPrimary(photo)">Make Primary</b-button>
-                    <b-button variant="danger" @click="deletePhoto(photo)">Delete Photo</b-button>
+                    <div v-if="detailedVenue.admin.userId === parseInt(profileID)">
+                        <b-button :disabled="photo.isPrimary" variant="primary" @click="makePhotoPrimary(photo)">Make Primary</b-button>
+                        <b-button variant="danger" @click="deletePhoto(photo)">Delete Photo</b-button>
+                    </div>
+
                 </b-col>
             </b-row>
             <b-row v-if="detailedVenue.photos.length === 0">
@@ -132,7 +135,7 @@
             </b-container>
         </b-container>
 
-        <b-container v-if="detailedVenue.admin.userId === parseInt(this.profileID)">
+        <b-container v-if="detailedVenue.admin.userId === parseInt(profileID)">
             <b-alert v-model="showSuccess" variant="success" dismissible>{{alertMessage}}</b-alert>
             <b-button class="m-1" v-b-toggle.collapseEditVenue block variant="primary">Edit Venue</b-button>
             <b-collapse id="collapseEditVenue" class="mt-2">
