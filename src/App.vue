@@ -1,7 +1,7 @@
 <template>
     <div id="app">
         <nav-main :authToken="authToken"></nav-main>
-        <router-view :authToken="authToken" :categories="categories" :profileID="loggedInUser"></router-view>
+        <router-view :key="refreshPageKey" @refresh-page="refreshPage" :authToken="authToken" :categories="categories" :profileID="loggedInUser"></router-view>
     </div>
 </template>
 
@@ -15,7 +15,8 @@
                 categories: [],
                 loggedInUser: "",
                 authToken: "",
-                authFlag: ""
+                authFlag: "",
+                refreshPageKey: 0
             }
         },
         mounted() {
@@ -23,6 +24,9 @@
             this.getSessionAuthToken();
         },
         methods: {
+            refreshPage() {
+                this.refreshPageKey += 1;
+            },
             getAllCategories() {
                 console.log(sessionStorage.getItem('accessToken'));
                 this.$http.get('http://localhost:4941/api/v1/categories')

@@ -81,11 +81,10 @@
                 </b-select>
             </b-form-group>
 
-
+            <b-form-checkbox style="margin-bottom: 15px;" v-model="getMyVenues">Get all my administered venues</b-form-checkbox>
             <b-button @click="populateQuery" :disabled="disableSearch" variant="success">Search</b-button>
             <b-button @click="resetSearch" variant="warning">Clear Filter</b-button>
-            <b-form-checkbox style="margin-top: 15px;" :disabled="disableSwitch || !authToken" @change="getAllVenuesAdmin" v-model="switchAdmin" switch>Get all my administered venues</b-form-checkbox>
-            <p style="font-size: 12px;">Note: Filtering venues is disabled when looking at admin venues.</p>
+
 
             <div style="margin-top: 50px;">
                 <b-alert v-model="showSuccess" variant="success" dismissible>{{alertMessage}}</b-alert>
@@ -112,7 +111,6 @@
                          :items="venues"
                          :fields="fields"
                          :busy="venues.length === 0 || retrievingVenues"
-                         v-if="venues.length > 0"
                          :per-page="perPage"
                          :current-page="currentPage">
                     <div slot="table-busy" class="text-center my-2">
@@ -156,16 +154,15 @@
                     </template>
                     <template slot="table-caption"><p style="font-size: 12px">Note: Distance is only available if you allow access to your location</p></template>
                 </b-table>
-                <b-container v-if="showAdminVenues && venues.length === 0">
-                    <h4>Can't find any venues!</h4>
-                </b-container>
             </div>
             <div>
 
                 <b-modal size="xl" ref="view-single-venue-modal" id="viewSingleVenueModal" hide-footer>
                     <div>
-                        <single-venue :categories="categories" :authToken="authToken" :profileID="profileID" :venuesReviews="venuesReviews"
-                                      :singleVenue="selectedVenue" :detailedVenue="detailedVenue">
+                        <single-venue :key="singleVenue" :categories="categories" :authToken="authToken"
+                                      :profileID="profileID" :venuesReviews="venuesReviews"
+                                      :singleVenue="selectedVenue" :detailedVenue="detailedVenue"
+                                      @refresh-page="refreshPage" @venue-saved="refreshVenues">
                         </single-venue>
                     </div>
                     <div slot="modal-title">
@@ -196,7 +193,6 @@
             return {
                 venues:[],
                 detailedVenues:[],
-                adminVenues:[],
                 cities: [],
                 sortByOptions: [
                     {value: "STAR_RATING", text: "Star Rating (Highest - Lowest)"},
@@ -211,12 +207,12 @@
                     myLongitude: "",
                     reverseSort: false,
                     minStarRating: "",
-                    maxCostRating: "",
-                    disableSwitch: false
+                    maxCostRating: ""
                 },
                 selectedVenue: "",
                 detailedVenue: "",
                 fields: [
+                    {key:'primary_photo', label: 'Primary Photo'},
                     {key:'venueName', label: 'Name'},
                     {key:'categoryName', label: 'Category'},
                     {key:'meanStarRating', label: 'Star Rating', thClass: 'd-none', tdClass: 'd-none'},
@@ -224,7 +220,6 @@
                     {key:'modeCostRating', label: 'Cost Rating', thClass: 'd-none', tdClass: 'd-none'},
                     {key: 'costRating', label: 'Cost Rating'},
                     {key:'totalDist', label: 'Distance'},
-                    {key:'primary_photo', label: 'Primary Photo'},
                     'actions'
                 ],
                 starRatingOptions: [
@@ -251,10 +246,8 @@
                 perPage: 10,
                 currentPage: 1,
                 retrievingVenues: false,
-                showAdminVenues: false,
-                disableSwitch: false,
-                disableSearch: false,
-                switchAdmin: false
+                singleVenue: 0,
+                getMyVenues: false
             }
         },
         mounted() {
@@ -263,7 +256,7 @@
         },
         computed: {
             rows() {
-                return this.venues.length
+                return this.venues.length;
             },
             calculateViews() {
                 if (this.currentPage === 1) {
@@ -283,6 +276,15 @@
             }
         },
         methods: {
+            refreshPage() {
+                this.singleVenue += 1;
+                this.getAllVenues();
+                this.$emit('refresh-page', true);
+            },
+            refreshVenues() {
+                this.resetSearch();
+                this.getAllVenues();
+            },
             getAllVenues() {
                 this.$http.get('http://localhost:4941/api/v1/venues')
                     .then(function(response) {
@@ -291,54 +293,6 @@
                         this.error = error;
                         this.errorFlag = true;
                     })
-            },
-            getAllVenuesAdmin() {
-                this.showAdminVenues = !this.showAdminVenues;
-                this.disableSearch = !this.disableSearch;
-
-                if (!this.showAdminVenues) {
-                    this.detailedVenues.length = 0;
-                    this.getAllVenues();
-                }
-                else {
-                    let self = this;
-                    this.$http.get('http://localhost:4941/api/v1/venues')
-                        .then(function(response) {
-                            this.venues = response.data;
-                            self.getDetailedVenues();
-                        }, function(error) {
-                            this.error = error;
-                            this.errorFlag = true;
-                        })
-                }
-
-            },
-            getDetailedVenues() {
-                let self = this;
-                for (let i = 0; i < this.venues.length; i++ ) {
-                    this.$http.get('http://localhost:4941/api/v1/venues/' + this.venues[i].venueId)
-                        .then(function(response) {
-                            //this.detailedVenues.push(response.data);
-                            if (self.getAdminVenues(response.data)) {
-                                self.detailedVenues.push(this.venues[i]);
-                            }
-                        }, function(error) {
-                            this.error = error;
-                            this.errorFlag = true;
-                        });
-                }
-                this.retrievingVenues = true;
-                //this.clearVenues();
-                setTimeout(function() {
-                    self.venues = self.detailedVenues;
-                    self.retrievingVenues = false;
-                }, 500);
-            },
-            getAdminVenues(venue) {
-                if (venue.admin.userId === parseInt(this.profileID)) {
-                    this.adminVenues.push(venue);
-                    return true;
-                }
             },
             getAllCities() {
                 this.$http.get('http://localhost:4941/api/v1/venues')
@@ -358,15 +312,9 @@
 
             getAllVenuesQuery(query) {
                 this.venues=[];
-                let self = this;
-                this.disableSwitch = !this.disableSwitch;
-
                 this.$http.get('http://localhost:4941/api/v1/venues' + query)
                     .then(function(response) {
                         this.venues = response.data;
-                        if (self.showAdminVenues) {
-                            self.detailedVenues();
-                        }
                     }, function(error) {
                         this.error = error;
                         this.errorFlag = true;
@@ -434,6 +382,9 @@
                         query += keys[i] + "=" + values[i] + "&";
                     }
                 }
+                if (this.getMyVenues) {
+                    query += "adminId=" + this.profileID;
+                }
                 if (query[query.length -1] === '&') {
                     query = query.substr(0, query.length -1);
                 }
@@ -468,17 +419,10 @@
                     }
                 }
                 this.detailedVenues = [];
-                if (this.switchAdmin) {
-                    this.switchAdmin = !this.switchAdmin;
-                    this.showAdminVenues = !this.showAdminVenues;
-                    this.disableSearch = !this.disableSearch;
-
+                if (this.getMyVenues) {
+                    this.getMyVenues = !this.getMyVenues;
                 }
-                if (this.disableSwitch) {
-                    this.disableSwitch = !this.disableSwitch;
-                }
-
-
+                this.showSuccess = false;
                 this.getAllVenues();
             },
             reverseValues() {

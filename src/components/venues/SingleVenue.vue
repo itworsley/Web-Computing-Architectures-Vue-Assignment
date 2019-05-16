@@ -52,27 +52,21 @@
             <b-col>{{ '$'.repeat(parseInt(singleVenue.modeCostRating))}} {{ singleVenue.modeCostRating }}</b-col>
         </b-row>
         <b-container class="p-3 m-2 rounded bg-dark">
-            <b-row v-if="detailedVenue.photos.length > 0">
-                <b-col v-for="photo in detailedVenue.photos.slice(0,4)">
+            <b-alert v-model="showSuccessPhoto" variant="success" dismissible>{{alertMessage}}</b-alert>
+            <b-alert v-model="showErrorPhoto" variant="danger" dismissible>{{alertMessage}}</b-alert>
+            <b-row v-if="detailedVenue.photos.length > 0" v-for="photo in detailedVenue.photos">
+                <b-col>
                     <b-img rounded
                            thumbnail
                            :src= "'http://localhost:4941/api/v1/venues/' + singleVenue.venueId + '/photos/' + photo.photoFilename"
                            alt="Venue Image"
                            width="300px">
                     </b-img>
+                    <b-button :disabled="photo.isPrimary" variant="primary" @click="makePhotoPrimary(photo)">Make Primary</b-button>
+                    <b-button variant="danger" @click="deletePhoto(photo)">Delete Photo</b-button>
                 </b-col>
             </b-row>
-            <b-row style="margin-top: 10px" v-if="detailedVenue.photos.length > 4 && detailedVenue.photos.length <= 8">
-                <b-col v-for="photo in detailedVenue.photos.slice(4,9)">
-                    <b-img rounded
-                           thumbnail
-                           :src= "'http://localhost:4941/api/v1/venues/' + singleVenue.venueId + '/photos/' + photo.photoFilename"
-                           alt="Venue Image"
-                           width="300px">
-                    </b-img>
-                </b-col>
-            </b-row>
-            <b-row v-else>
+            <b-row v-if="detailedVenue.photos.length === 0">
                 <h5 class="m-2" style="color: white">There are no photos!</h5>
             </b-row>
         </b-container>
@@ -160,10 +154,14 @@
             return {
                 showFullDescription: false,
                 showSuccess: false,
+                showSuccessPhoto: false,
                 showError: false,
+                showErrorPhoto: false,
                 alertMessage: "",
                 venuePhoto: null,
-                venuePhotoInvalidMessage: ""
+                venuePhotoInvalidMessage: "",
+                venuePhotos: []
+
             }
         },
         computed: {
@@ -182,7 +180,7 @@
                 }
                 return this.venuePhoto.size <= 1024 * 1024 * 20 && (this.venuePhoto.type === 'image/jpeg'
                     || this.venuePhoto.type === 'image/png');
-            },
+            }
         },
         methods: {
             calculateCostRating(review) {
@@ -207,15 +205,14 @@
                 return this.venuesReviews.sort(compare);
             },
             savedSuccess() {
-                console.log("HERE");
                 this.showSuccess = true;
                 this.alertMessage = "Venue Successfully Saved";
+                this.$emit('venue-saved', true);
             },
             uploadVenuePhoto() {
+                let self = this;
                 if (this.fileValidation) {
                     let formData = new FormData();
-                    console.log(this.venuePhoto);
-
                     formData.append('photo', this.venuePhoto);
                     formData.append('type', "file");
                     formData.append('description', "New Photo");
@@ -224,30 +221,73 @@
                     fetch('http://localhost:4941/api/v1/venues/'+this.singleVenue.venueId+"/photos", {
                         method: "POST",
                         headers: {
-                            'X-Authorization': this.authToken,
-                            'Content-Type': 'multipart/form-data',
+                            'X-Authorization': this.authToken
                         },
                         body: formData
 
                     }).then(function(response) {
                         if (response.ok) {
-                            this.showSuccess = true;
-                            this.alertMessage = "Profile Photo Added";
-                            this.$router.go();
+                            self.showSuccessPhoto = true;
+                            self.alertMessage = "Venue Photo Added ... refreshing page ...";
+                            setTimeout(function() {
+                                self.$emit('refresh-page', true);
+                            }, 2000);
+
                         } else if (response.status === 400) {
-                            this.showError = true;
-                            this.alertMessage = "File is not an png or jpeg, or is too big"
+                            self.showErrorPhoto = true;
+                            self.alertMessage = "File is not an png or jpeg, or is too big"
                         }
                     }, function(error) {
-                        this.error = error;
-                        this.errorFlag = true;
+                        self.error = error;
+                        self.errorFlag = true;
                     });
                 } else {
-                    this.showError = true;
-                    this.alertMessage = "File is too big, or no file selected."
+                    self.showError = true;
+                    self.alertMessage = "File is too big, or no file selected."
                 }
             },
-
+            makePhotoPrimary(photo) {
+                let self = this;
+                console.log(photo);
+                fetch('http://localhost:4941/api/v1/venues/'+this.singleVenue.venueId+"/photos/" + photo.photoFilename +
+                    "/setPrimary", {
+                    method: "POST",
+                    headers: {
+                        'X-Authorization': this.authToken
+                    },
+                }).then(function(response) {
+                    if (response.ok) {
+                        self.showSuccessPhoto = true;
+                        self.alertMessage = "Primary Photo Changed ... refreshing page ...";
+                        setTimeout(function() {
+                            self.$emit('refresh-page', true);
+                        }, 2000);
+                    }
+                }, function(error) {
+                    self.error = error;
+                    self.errorFlag = true;
+                });
+            },
+            deletePhoto(photo) {
+                let self = this;
+                fetch('http://localhost:4941/api/v1/venues/'+this.singleVenue.venueId+"/photos/" + photo.photoFilename, {
+                    method: "DELETE",
+                    headers: {
+                        'X-Authorization': this.authToken
+                    },
+                }).then(function(response) {
+                    if (response.ok) {
+                        self.showSuccessPhoto = true;
+                        self.alertMessage = "Venue Photo Deleted ... refreshing page ...";
+                        setTimeout(function() {
+                            self.$emit('refresh-page', true);
+                        }, 2000);
+                    }
+                }, function(error) {
+                    self.error = error;
+                    self.errorFlag = true;
+                });
+            }
         },
         components: {
             AddVenue
