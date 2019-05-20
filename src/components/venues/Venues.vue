@@ -81,8 +81,8 @@
                 </b-select>
             </b-form-group>
 
-            <b-form-checkbox style="margin-bottom: 15px;" v-model="getMyVenues">Get all my administered venues</b-form-checkbox>
-            <b-button @click="populateQuery" :disabled="disableSearch" variant="success">Search</b-button>
+            <b-form-checkbox style="margin-bottom: 15px;" :disabled="!authToken" v-model="getMyVenues">Get all my administered venues</b-form-checkbox>
+            <b-button @click="populateQuery" variant="success">Search</b-button>
             <b-button @click="resetSearch" variant="warning">Clear Filter</b-button>
 
 
