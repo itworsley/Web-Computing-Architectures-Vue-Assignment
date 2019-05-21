@@ -121,7 +121,7 @@
                         {{categories[row.item.categoryId-1].categoryName}}
                     </template>
                     <template slot="starRating" slot-scope="row">
-                        {{'&starf;'.repeat(parseInt(row.item.meanStarRating))}}
+                        {{'&starf;'.repeat(parseInt(calculateMeanStarRating(row.item.meanStarRating)))}}
                         {{calculateMeanStarRating(row.item.meanStarRating)}}
                     </template>
                     <template slot="costRating" slot-scope="row">
@@ -152,8 +152,24 @@
                         </b-row>
 
                     </template>
-                    <template slot="table-caption"><p style="font-size: 12px">Note: Distance is only available if you allow access to your location</p></template>
+                    <template slot="table-caption"><p style="font-size: 12px">Note: Distance is only available if you allow access to your location.</p></template>
+                    <template slot="table-caption"><p style="font-size: 12px">      * no reviews are given for this venue yet.</p></template>
                 </b-table>
+
+                <label>Per Page</label>
+                <div v-if="!retrievingVenues">
+                    <b-pagination
+                        v-model="currentPage"
+                        :total-rows="rows"
+                        :per-page="perPage"
+                        aria-controls="venues-table"
+                        first-text="First"
+                        prev-text="Prev"
+                        next-text="Next"
+                        last-text="Last"
+                    ></b-pagination>
+                    <p class="mt-3">Showing Venues: {{ calculateViews }}</p>
+                </div>
             </div>
             <div>
 
@@ -276,6 +292,12 @@
             }
         },
         methods: {
+            calculateCostRating(review) {
+                if (review.costRating === 0) {
+                    return "Free!";
+                }
+                return '$'.repeat(parseInt(review.costRating));
+            },
             refreshPage() {
                 this.singleVenue += 1;
                 this.getAllVenues();
@@ -399,18 +421,18 @@
             },
             calculateModeCostRating(costRating) {
                 if (costRating === null) {
-                    return 'N/A';
+                    return 'Free*';
                 }
-                else if (!costRating > 0) {
+                else if (costRating === 0) {
                     return 'Free';
                 }
+                return costRating;
             },
             calculateMeanStarRating(starRating) {
                 if (starRating === null) {
-                    return 'N/A';
-                } else {
-                    return starRating;
+                    return '3*';
                 }
+                return starRating;
             },
             resetSearch() {
                 for (let key in this.queryValues) {

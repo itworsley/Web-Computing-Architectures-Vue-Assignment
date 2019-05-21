@@ -28,6 +28,7 @@
                             fluid
                             alt="Profile Image"
                             thumbnail
+                            width="500%"
                             @click="openImageModal"
                             style="cursor: pointer">
                         </b-img>
@@ -73,6 +74,7 @@
                     <div class="d-block text-center" @click="openImageModal">
                         <b-img
                             :src= "'http://localhost:4941/api/v1/users/' + profileIDNumber + '/photo'"
+                            onerror="this.src='../../../src/assets/placeholder-venue-image.png';"
                             fluid
                             alt="Profile Image"
                             thumbnail>
@@ -83,6 +85,7 @@
                     <div class="d-block text-center">
                         <b-img
                             :src= "'http://localhost:4941/api/v1/users/' + profileIDNumber + '/photo'"
+                            onerror="this.src='../../../src/assets/placeholder-venue-image.png';"
                             fluid
                             alt="Profile Image"
                             thumbnail>
