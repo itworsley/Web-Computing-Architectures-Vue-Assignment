@@ -231,6 +231,7 @@
                     {key:'primary_photo', label: 'Primary Photo'},
                     {key:'venueName', label: 'Name'},
                     {key:'categoryName', label: 'Category'},
+                    {key:'city', label: 'City'},
                     {key:'meanStarRating', label: 'Star Rating', thClass: 'd-none', tdClass: 'd-none'},
                     {key: 'starRating', label: 'Star Rating'},
                     {key:'modeCostRating', label: 'Cost Rating', thClass: 'd-none', tdClass: 'd-none'},
