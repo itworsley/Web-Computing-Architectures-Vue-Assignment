@@ -59,6 +59,7 @@
                     <b-img rounded
                            thumbnail
                            :src= "'http://localhost:4941/api/v1/venues/' + singleVenue.venueId + '/photos/' + photo.photoFilename"
+                           onerror="this.src='../../../src/assets/placeholder-venue-image.png';"
                            alt="Venue Image"
                            width="300px">
                     </b-img>
